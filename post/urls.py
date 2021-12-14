@@ -9,4 +9,5 @@ urlpatterns = [
     path('post/detail/<int:pk>', PostDetailView.as_view()),
     path('users/', RegistrationApiView.as_view()),
     path('users/login/', LoginAPIView.as_view()),
+    path('user', UserRetrieveUpdateAPIView.as_view()),
     ]

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.contrib.auth import authenticate
 from post.models import * 
 
 
@@ -26,16 +27,17 @@ class RegistrationSerializer(serializers.ModelSerializer):
 		return User.objects.create_user(**validated_data)
 
 class LoginSerializer(serializers.Serializer):
-	login = serializers.CharField(max_length=32, read_only=True)
+	login = serializers.CharField(max_length=32)
 	password = serializers.CharField(max_length=128, write_only=True)
 	token = serializers.CharField(max_length=255, read_only=True)
 
 	def validate(self, data):
 		login = data.get('login', None)
 		password = data.get('password', None)
+		print(login, password)
 		if login is None:
 			raise serializers.ValidationError('An login is required to log in')
-		if passwors is None:
+		if password is None:
 			raise serializers.ValidationError('An passsword is required to log in')
 
 		user = authenticate(username=login, password=password)
@@ -43,4 +45,20 @@ class LoginSerializer(serializers.Serializer):
 			raise serializers.ValidationError('User with this email and password was not found')
 		if not user.is_active:
 			raise serializers.ValidationError('This user has been deactivated.')
-		return {'login': user.username, 'token': user.token}
+		return {'login': user.login, 'token': user.token}
+
+class UserSerializer(serializers.ModelSerializer):
+	password = serializers.CharField(max_length=128, write_only=True)
+	class Meta:
+		model = User
+		fields = ['login', 'password', 'token']
+		read_only_fields = ('token',)
+
+	def update(self, instance, validated_data):
+		password = validated_data.pop('password', None)
+		for key, value in validated_data.items():
+			settattr(instance, key, value)
+		if password is not None:
+			instance.set_password(password)
+		instance.save()
+		return instance
